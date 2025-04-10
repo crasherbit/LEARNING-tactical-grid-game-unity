@@ -1,0 +1,133 @@
+.main-container {
+    flex-grow: 1;
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 20px;
+    align-items: center;
+    justify-content: center;
+}
+
+.title-label {
+    color: white;
+    font-size: 36px;
+    -unity-font-style: bold;
+    margin-bottom: 40px;
+}
+
+.form-container {
+    width: 400px;
+    background-color: rgba(40, 40, 40, 0.9);
+    padding: 20px;
+    border-radius: 10px;
+    border-width: 1px;
+    border-color: rgba(80, 80, 80, 0.5);
+}
+
+.label {
+    color: white;
+    font-size: 16px;
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+
+.input-field {
+    margin-bottom: 15px;
+    height: 30px;
+}
+
+.button-row {
+    flex-direction: row;
+    justify-content: center;
+    margin: 10px 0;
+}
+
+.primary-button {
+    background-color: rgba(0, 120, 215, 0.8);
+    border-width: 0;
+    color: white;
+    height: 40px;
+    width: 80%;
+    border-radius: 5px;
+    font-size: 16px;
+    -unity-font-style: bold;
+    margin: 10px 0;
+}
+
+.secondary-button {
+    background-color: rgba(100, 100, 100, 0.8);
+    border-width: 0;
+    color: white;
+    height: 40px;
+    width: 100%;
+    border-radius: 5px;
+    font-size: 16px;
+    margin: 10px 0;
+}
+
+.primary-button:hover, .secondary-button:hover {
+    background-color: rgba(0, 150, 255, 0.8);
+}
+
+.separator-label {
+    color: #AAAAAA;
+    -unity-text-align: middle-center;
+    margin: 10px 0;
+}
+
+.status-label {
+    color: #FFD700;
+    -unity-text-align: middle-center;
+    margin-top: 15px;
+    height: 20px;
+}
+
+.game-list {
+    width: 400px;
+    margin-top: 20px;
+    background-color: rgba(40, 40, 40, 0.7);
+    padding: 15px;
+    border-radius: 5px;
+    max-height: 200px;
+    overflow: hidden;
+}
+
+.game-list-title {
+    color: white;
+    font-size: 18px;
+    -unity-font-style: bold;
+    margin-bottom: 10px;
+}
+
+.game-list-item {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(60, 60, 60, 0.6);
+    padding: 8px;
+    border-radius: 3px;
+    margin-bottom: 5px;
+}
+
+.game-id-label {
+    color: white;
+    font-size: 14px;
+}
+
+.join-button {
+    background-color: rgba(0, 120, 0, 0.8);
+    border-width: 0;
+    color: white;
+    height: 25px;
+    width: 80px;
+    border-radius: 3px;
+}
+
+.join-button:hover {
+    background-color: rgba(0, 150, 0, 0.8);
+}
+
+.no-games-label {
+    color: #AAAAAA;
+    font-size: 14px;
+    -unity-text-align: middle-center;
+    padding: 10px;
+}
