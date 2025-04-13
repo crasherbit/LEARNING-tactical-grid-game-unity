@@ -108,32 +108,37 @@ public class NetworkManager : MonoBehaviour {
     public void SendAction(GameAction action, System.Action<bool, string> callback) {
         StartCoroutine(SendActionCoroutine(action, callback));
     }
-    
-    private IEnumerator SendActionCoroutine(GameAction action, System.Action<bool, string> callback) {
+
+    // Aggiungi queste modifiche al metodo SendActionCoroutine esistente
+    private IEnumerator SendActionCoroutine(GameAction action, System.Action<bool, string> callback)
+    {
         string url = $"{serverUrl}/api/game/{action.gameId}/action";
         string json = JsonUtility.ToJson(action);
-        
+
         using (UnityWebRequest request = new UnityWebRequest(url, "POST"))
         {
             byte[] bodyRaw = Encoding.UTF8.GetBytes(json);
             request.uploadHandler = new UploadHandlerRaw(bodyRaw);
             request.downloadHandler = new DownloadHandlerBuffer();
             request.SetRequestHeader("Content-Type", "application/json");
-            
+
+            // Aggiungi questi header per CORS se necessario
+            // request.SetRequestHeader("Origin", "http://localhost");
+
             yield return request.SendWebRequest();
-            
+
             bool success = request.result == UnityWebRequest.Result.Success;
             string response = request.downloadHandler.text;
-            
+
             if (!success)
             {
-                Debug.LogError($"Errore nell'invio dell'azione: {request.error}");
+                Debug.LogError($"Errore nell'invio dell'azione: {request.error} - Response: {response}");
             }
-            
+
             callback?.Invoke(success, response);
         }
     }
-    
+
     // Ottieni la lista delle partite disponibili
     public void GetGamesList(System.Action<List<GameInfo>> callback) {
         StartCoroutine(GetGamesListCoroutine(callback));

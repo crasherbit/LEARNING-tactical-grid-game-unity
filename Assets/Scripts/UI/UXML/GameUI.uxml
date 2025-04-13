@@ -25,5 +25,13 @@
                 <engine:Label text="Your Turn" name="turn-indicator-label" class="stat-label" />
             </engine:VisualElement>
         </engine:VisualElement>
+        
+        <!-- Tooltip per le abilità -->
+        <engine:VisualElement name="tooltip-container" class="tooltip-container">
+            <engine:Label name="ability-name" class="tooltip-title" />
+            <engine:Label name="ability-description" class="tooltip-description" />
+            <engine:Label name="ability-cost" class="tooltip-stat" />
+            <engine:Label name="ability-cooldown" class="tooltip-stat" />
+        </engine:VisualElement>
     </engine:VisualElement>
 </engine:UXML>

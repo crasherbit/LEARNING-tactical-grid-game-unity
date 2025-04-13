@@ -10,10 +10,13 @@ public class GameManager : MonoBehaviour
     private NetworkManager networkManager;
     public GameObject playerPrefab;
     private PlayerController playerInstance;
-
+    private Vector2Int currentAbilityTarget;
     // Identificatori di gioco
     public string gameId;
     public string playerId;
+
+    private List<Vector2Int> currentMovementPath;
+    private int playerMovementRange = 3;
 
     // Stati di gioco - Rinominato da GameState a GamePhase per evitare conflitti
     public enum GamePhase
@@ -271,46 +274,67 @@ public class GameManager : MonoBehaviour
         }
     }
 
+
     private void HandleMovementSelection(int x, int z)
     {
-        // Verifica che il movimento sia valido
-        int deltaX = Mathf.Abs(x - playerInstance.gridX);
-        int deltaZ = Mathf.Abs(z - playerInstance.gridY);
-
-        if ((deltaX == 1 && deltaZ == 0) || (deltaX == 0 && deltaZ == 1))
+        // Verifica se c'è un percorso valido verso la destinazione
+        if (currentMovementPath != null)
         {
-            // Crea un'azione di movimento
-            GameAction moveAction = new GameAction
-            {
-                gameId = gameId,
-                playerId = playerId,
-                type = GameAction.ActionType.Move,
-                startPosition = new GridPosition(playerInstance.gridX, playerInstance.gridY),
-                targetPosition = new GridPosition(x, z)
-            };
+            // Controlla se il percorso porta a questa destinazione
+            Vector2Int lastPos = currentMovementPath[currentMovementPath.Count - 1];
 
-            // Invia l'azione al server
-            networkManager.SendAction(moveAction, (success, response) =>
+            if (lastPos.x == x && lastPos.y == z)
             {
-                if (success)
+                // Ottieni il costo del movimento (numero di passi - 1, escludendo la posizione iniziale)
+                int moveCost = currentMovementPath.Count - 1;
+
+                // Verifica che il giocatore abbia abbastanza punti azione
+                if (playerInstance.actionPoints >= moveCost)
                 {
-                    // Movimento riuscito
-                    playerInstance.TryMove(x, z);
-                    currentSelectionMode = SelectionMode.None;
-                    gridManager.ResetHighlights();
+                    // Crea un'azione di movimento
+                    GameAction moveAction = new GameAction
+                    {
+                        gameId = gameId,
+                        playerId = playerId,
+                        type = GameAction.ActionType.Move,
+                        startPosition = new GridPosition(playerInstance.gridX, playerInstance.gridY),
+                        targetPosition = new GridPosition(x, z)
+                    };
+
+                    // Invia l'azione al server
+                    networkManager.SendAction(moveAction, (success, response) =>
+                    {
+                        if (success)
+                        {
+                            // Movimento riuscito
+                            playerInstance.TryMove(x, z);
+                            currentSelectionMode = SelectionMode.None;
+                            gridManager.ResetHighlights();
+                            currentMovementPath = null;
+                        }
+                        else
+                        {
+                            Debug.LogError($"Errore nel movimento: {response}");
+                        }
+                    });
                 }
                 else
                 {
-                    Debug.LogError($"Errore nel movimento: {response}");
+                    Debug.Log("Non hai abbastanza punti azione per questo movimento!");
                 }
-            });
+            }
+            else
+            {
+                // L'utente ha cambiato destinazione, calcola un nuovo percorso
+                ShowMovementPath(x, z);
+            }
         }
         else
         {
-            Debug.Log("Movimento non valido!");
+            // Calcola e mostra il percorso
+            ShowMovementPath(x, z);
         }
     }
-
     private void HandleAbilityTargetSelection(int x, int z)
     {
         if (string.IsNullOrEmpty(selectedAbilityId))
@@ -320,10 +344,17 @@ public class GameManager : MonoBehaviour
         }
 
         // Ottieni l'abilità selezionata
-        AbilityManager.Ability ability = abilityManager.GetAbilityById(selectedAbilityId);
+        Ability ability = abilityManager.GetAbilityById(selectedAbilityId);
         if (ability == null)
         {
             Debug.LogError($"Abilità {selectedAbilityId} non trovata!");
+            return;
+        }
+
+        // Verifica se l'abilità è in cooldown
+        if (!ability.IsAvailable())
+        {
+            Debug.Log("L'abilità è in cooldown!");
             return;
         }
 
@@ -334,6 +365,34 @@ public class GameManager : MonoBehaviour
             return;
         }
 
+        // Memorizza il target dell'abilità
+        currentAbilityTarget = new Vector2Int(x, z);
+
+        // Per abilità ad area, mostra l'area d'effetto
+        if (ability.rangeType == Ability.RangeType.Area)
+        {
+            // Prima reset dell'highlight
+            gridManager.ResetHighlights();
+
+            // Evidenzia l'area d'effetto
+            abilityManager.ShowAreaOfEffect(ability, x, z);
+
+            // Aggiungiamo un pulsante di conferma
+            UIManager uiManager = FindObjectOfType<UIManager>();
+            // Qui idealmente chiameresti un metodo dell'UIManager per mostrare un pulsante di conferma
+            // Per semplicità, procediamo direttamente all'uso dell'abilità
+            UseAbility();
+        }
+        else
+        {
+            // Per abilità a bersaglio singolo, usiamo subito
+            UseAbility();
+        }
+    }
+    private void UseAbility()
+    {
+        Ability ability = abilityManager.GetAbilityById(selectedAbilityId);
+
         // Crea un'azione per l'abilità
         GameAction abilityAction = new GameAction
         {
@@ -342,7 +401,7 @@ public class GameManager : MonoBehaviour
             type = GameAction.ActionType.UseAbility,
             abilityId = selectedAbilityId,
             startPosition = new GridPosition(playerInstance.gridX, playerInstance.gridY),
-            targetPosition = new GridPosition(x, z)
+            targetPosition = new GridPosition(currentAbilityTarget.x, currentAbilityTarget.y)
         };
 
         // Invia l'azione al server
@@ -351,7 +410,19 @@ public class GameManager : MonoBehaviour
             if (success)
             {
                 // Abilità utilizzata con successo
-                playerInstance.TryUseAbility(selectedAbilityId, x, z);
+                playerInstance.TryUseAbility(selectedAbilityId, currentAbilityTarget.x, currentAbilityTarget.y);
+
+                // Applica il cooldown
+                ability.ApplyCooldown();
+
+                // Notifica l'UIManager
+                UIManager uiManager = FindObjectOfType<UIManager>();
+                if (uiManager != null)
+                {
+                    uiManager.OnAbilityUsed(selectedAbilityId);
+                }
+
+                // Reset
                 currentSelectionMode = SelectionMode.None;
                 gridManager.ResetHighlights();
                 selectedAbilityId = null;
@@ -362,7 +433,29 @@ public class GameManager : MonoBehaviour
             }
         });
     }
+    // Visualizza il percorso verso una destinazione
+    private void ShowMovementPath(int x, int z)
+    {
+        // Reset delle evidenziazioni
+        gridManager.ResetHighlights();
 
+        // Calcola il percorso
+        currentMovementPath = gridManager.FindAndShowPath(
+            playerInstance.gridX,
+            playerInstance.gridY,
+            x, z,
+            playerMovementRange);
+
+        if (currentMovementPath == null || currentMovementPath.Count <= 1)
+        {
+            Debug.Log("Percorso non valido o irraggiungibile!");
+        }
+        else
+        {
+            int moveCost = currentMovementPath.Count - 1; // -1 per escludere la posizione iniziale
+            Debug.Log($"Costo movimento: {moveCost} punti azione");
+        }
+    }
     private void ShowActionOptions(int x, int z)
     {
         // Per ora mostriamo solo le opzioni di movimento
@@ -373,14 +466,12 @@ public class GameManager : MonoBehaviour
     // Evidenzia le celle dove il player può muoversi
     void HighlightMovableTiles()
     {
-        int x = playerInstance.gridX;
-        int y = playerInstance.gridY;
-
-        // Evidenzia le celle adiacenti se sono nella griglia
-        if (x > 0) gridManager.HighlightTile(x - 1, y, Color.green);
-        if (x < gridManager.width - 1) gridManager.HighlightTile(x + 1, y, Color.green);
-        if (y > 0) gridManager.HighlightTile(x, y - 1, Color.green);
-        if (y < gridManager.height - 1) gridManager.HighlightTile(x, y + 1, Color.green);
+        // Usa il nuovo metodo con il range di movimento
+        gridManager.HighlightMovableCells(
+            playerInstance.gridX,
+            playerInstance.gridY,
+            playerMovementRange,
+            Color.green);
     }
 
     // Metodo pubblico per selezionare un'abilità (sarà chiamato dai bottoni UI)

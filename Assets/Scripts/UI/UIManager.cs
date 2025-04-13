@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UIElements;
+using System.Collections.Generic;
 
 public class UIManager : MonoBehaviour
 {
@@ -8,7 +9,8 @@ public class UIManager : MonoBehaviour
     private GameManager gameManager;
     private AbilityManager abilityManager;
     private PlayerController player;
-    
+    private AbilityTooltip abilityTooltip;
+
     // Elementi UI
     private Button endTurnButton;
     private Label playerHealthLabel;
@@ -19,14 +21,24 @@ public class UIManager : MonoBehaviour
     
     // Tenere traccia del pulsante abilità selezionato
     private Button selectedAbilityButton = null;
-    
+
+    // Dizionario per i pulsanti delle abilità
+    private Dictionary<string, Button> abilityButtons = new Dictionary<string, Button>();
+
     void Start()
     {
         // Ottieni i riferimenti
         gameManager = FindObjectOfType<GameManager>();
         abilityManager = FindObjectOfType<AbilityManager>();
         player = FindObjectOfType<PlayerController>();
-        
+        abilityTooltip = GetComponent<AbilityTooltip>();
+
+        if (abilityTooltip == null)
+        {
+            abilityTooltip = gameObject.AddComponent<AbilityTooltip>();
+            abilityTooltip.uiDocument = uiDocument;
+        }
+
         if (gameManager == null || abilityManager == null)
         {
             Debug.LogError("UIManager: Riferimenti mancanti!");
@@ -100,7 +112,11 @@ public class UIManager : MonoBehaviour
                 new StyleColor(new Color(0.4f, 0, 0, 0.5f));
             turnText.text = isPlayerTurn ? "Your Turn" : "Enemy Turn";
         }
+
+        // Aggiorna i pulsanti delle abilità in base ai cooldown
+        UpdateAbilityButtons();
     }
+
     private void CreateAbilityButtons()
     {
         Debug.Log($"Creo {abilityManager.abilities.Count} pulsanti per le abilità");
@@ -114,30 +130,111 @@ public class UIManager : MonoBehaviour
             
             // Aggiungi il testo del pulsante
             abilityButton.text = ability.name;
-            
-            // Aggiungi il tooltip
-            abilityButton.tooltip = $"{ability.name}\n{ability.description}\nCosto: {ability.actionPointCost} AP";
-            
-            // Aggiungi l'handler di click
+
+            // Crea un elemento per il cooldown (inizialmente nascosto)
+            Label cooldownLabel = new Label();
+            cooldownLabel.AddToClassList("ability-button-cooldown");
+            cooldownLabel.text = "";
+            cooldownLabel.style.display = DisplayStyle.None;
+            abilityButton.Add(cooldownLabel);
+
+            // Aggiungi gli handler di eventi
+            abilityButton.RegisterCallback<MouseEnterEvent>(evt =>
+            {
+                var abilityObj = abilityManager.GetAbilityById(ability.id);
+                if (abilityObj != null)
+                {
+                    abilityTooltip.ShowTooltip(abilityObj, new Vector2(evt.position.x, evt.position.y));
+                }
+            });
+
+            abilityButton.RegisterCallback<MouseLeaveEvent>(evt =>
+            {
+                abilityTooltip.HideTooltip();
+            });
+
             abilityButton.clicked += () => {
                 // Deseleziona il pulsante precedentemente selezionato
                 if (selectedAbilityButton != null)
                 {
                     selectedAbilityButton.RemoveFromClassList("ability-button-selected");
                 }
-                
-                // Seleziona questo pulsante
-                abilityButton.AddToClassList("ability-button-selected");
-                selectedAbilityButton = abilityButton;
-                
-                // Notifica il GameManager
-                gameManager.SelectAbility(ability.id);
-            };
-            
+
+                // Verifica se l'abilità è disponibile
+                var abilityObj = abilityManager.GetAbilityById(ability.id);
+                if (abilityObj != null && abilityObj.IsAvailable())
+                {
+                    // Seleziona questo pulsante
+                    abilityButton.AddToClassList("ability-button-selected");
+                    selectedAbilityButton = abilityButton;
+
+                    // Notifica il GameManager
+                    gameManager.SelectAbility(ability.id);
+                }
+                else
+                {
+                    Debug.Log("Questa abilità è in cooldown!");
+                }
+            });
+
             // Aggiungi il pulsante al contenitore
             abilitiesContainer.Add(abilityButton);
-            
+
+            // Memorizza il riferimento al pulsante
+            abilityButtons[ability.id] = abilityButton;
+
             Debug.Log($"Aggiunto bottone per abilità: {ability.name}");
         }
+    }
+
+    // Aggiorna lo stato visivo dei pulsanti delle abilità
+    private void UpdateAbilityButtons()
+    {
+        foreach (var ability in abilityManager.abilities)
+        {
+            if (abilityButtons.TryGetValue(ability.id, out Button button))
+            {
+                Label cooldownLabel = button.Q<Label>(null, "ability-button-cooldown");
+
+                // Se l'abilità è in cooldown, mostra il contatore
+                if (ability.currentCooldown > 0)
+                {
+                    cooldownLabel.text = ability.currentCooldown.ToString();
+                    cooldownLabel.style.display = DisplayStyle.Flex;
+                    button.AddToClassList("ability-button-disabled");
+                }
+                else
+                {
+                    cooldownLabel.style.display = DisplayStyle.None;
+                    button.RemoveFromClassList("ability-button-disabled");
+                }
+
+                // Disabilita il pulsante se non ci sono abbastanza punti azione
+                if (player != null && player.actionPoints < ability.actionPointCost)
+                {
+                    button.SetEnabled(false);
+                    button.tooltip = "Non hai abbastanza punti azione!";
+                }
+                else
+                {
+                    button.SetEnabled(ability.currentCooldown <= 0);
+                    button.tooltip = ability.description;
+                }
+            }
+        }
+    }
+
+    // Chiamato quando un'abilità viene usata con successo
+    public void OnAbilityUsed(string abilityId)
+    {
+        // Deseleziona il pulsante
+        if (selectedAbilityButton != null)
+        {
+            selectedAbilityButton.RemoveFromClassList("ability-button-selected");
+            selectedAbilityButton = null;
+        }
+
+        // Aggiorna immediatamente l'UI delle abilità
+        UpdateAbilityButtons();
     }
 }

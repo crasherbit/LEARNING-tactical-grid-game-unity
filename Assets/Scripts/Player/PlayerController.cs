@@ -1,5 +1,5 @@
 using UnityEngine;
-
+using System.Collections.Generic;
 public class PlayerController : MonoBehaviour
 {
     [Header("Grid Position")]
@@ -39,37 +39,58 @@ public class PlayerController : MonoBehaviour
     // Tenta di muovere il personaggio in una nuova cella
     public bool TryMove(int newX, int newZ)
     {
-        // Controlla se la destinazione è adiacente
-        int deltaX = Mathf.Abs(newX - gridX);
-        int deltaZ = Mathf.Abs(newZ - gridY);
-        
-        // Movimento consentito solo nelle celle adiacenti
-        if ((deltaX == 1 && deltaZ == 0) || (deltaX == 0 && deltaZ == 1))
+        // Controlla se ci sono punti azione sufficienti
+        // Il costo verrà calcolato in base alla distanza
+        int distance = Mathf.Abs(newX - gridX) + Mathf.Abs(newZ - gridY);
+
+        if (actionPoints >= distance)
         {
-            // Verifica se ci sono punti azione sufficienti
-            if (actionPoints >= 1)
-            {
-                // Aggiorna posizione
-                gridX = newX;
-                gridY = newZ;
-                UpdateVisualPosition();
-                
-                // Consuma un punto azione
-                actionPoints -= 1;
-                
-                return true;
-            }
-            else
-            {
-                Debug.Log("Non hai abbastanza punti azione!");
-                return false;
-            }
+            // Aggiorna posizione
+            gridX = newX;
+            gridY = newZ;
+            UpdateVisualPosition();
+
+            // Consuma punti azione basati sulla distanza
+            actionPoints -= distance;
+
+            return true;
         }
-        
-        Debug.Log("Destinazione non valida!");
-        return false;
+        else
+        {
+            Debug.Log("Non hai abbastanza punti azione!");
+            return false;
+        }
     }
-    
+    public bool TryMoveAlongPath(List<Vector2Int> path)
+    {
+        if (path == null || path.Count <= 1)
+        {
+            Debug.LogWarning("Percorso non valido!");
+            return false;
+        }
+
+        // Il costo è il numero di passi (escluso il punto di partenza)
+        int cost = path.Count - 1;
+
+        if (actionPoints >= cost)
+        {
+            // L'ultima posizione nel percorso è la destinazione
+            Vector2Int destination = path[path.Count - 1];
+            gridX = destination.x;
+            gridY = destination.y;
+            UpdateVisualPosition();
+
+            // Consuma punti azione
+            actionPoints -= cost;
+
+            return true;
+        }
+        else
+        {
+            Debug.Log($"Non hai abbastanza punti azione! (Richiesti: {cost}, Disponibili: {actionPoints})");
+            return false;
+        }
+    }
     // Tentativo di usare un'abilità
     public bool TryUseAbility(string abilityId, int targetX, int targetZ)
     {

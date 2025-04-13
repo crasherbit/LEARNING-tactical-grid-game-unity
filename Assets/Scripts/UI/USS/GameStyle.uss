@@ -96,3 +96,49 @@
     background-color: rgba(255, 100, 100, 0.7);
     border-color: yellow;
 }
+.tooltip-container {
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.9);
+    border-radius: 5px;
+    padding: 10px;
+    width: 250px;
+    border-width: 1px;
+    border-color: #CCCCCC;
+}
+
+.tooltip-title {
+    color: #FFCC00;
+    font-size: 16px;
+    -unity-font-style: bold;
+    margin-bottom: 5px;
+}
+
+.tooltip-description {
+    color: white;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.tooltip-stat {
+    color: #AACCFF;
+    font-size: 12px;
+}
+
+.ability-button-cooldown {
+    color: #FF5555;
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+    font-size: 14px;
+}
+
+.ability-button-disabled {
+    opacity: 0.5;
+    background-color: rgba(30, 30, 30, 0.7);
+}
