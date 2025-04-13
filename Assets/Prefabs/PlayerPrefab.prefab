@@ -124,5 +124,5 @@ MonoBehaviour:
   gridY: 0
   health: 100
   maxHealth: 100
-  actionPoints: 5
-  maxActionPoints: 5
+  actionPoints: 6
+  maxActionPoints: 6

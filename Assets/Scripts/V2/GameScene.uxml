@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <ui:VisualElement name="background">
+        <ui:Label name="turn-label" text="Your Turn" />
+        <ui:Button name="end-turn" text="End Turn" />
+    </ui:VisualElement>
+</ui:UXML>

@@ -10,23 +10,8 @@
         <engine:Label text="Tactical Grid Game - Lobby" class="title-label" />
         
         <engine:VisualElement class="form-container">
-            <engine:Label text="Il tuo nome" class="label" />
-            <engine:TextField name="player-name-field" class="input-field" />
-            
-            <engine:VisualElement class="button-row">
-                <engine:Button text="Crea Nuova Partita" name="create-game-button" class="primary-button" />
-            </engine:VisualElement>
-            
-            <engine:Label text="oppure" class="separator-label" />
-            
-            <engine:Label text="ID Partita" class="label" />
-            <engine:TextField name="game-id-field" class="input-field" />
-            
-            <engine:Button text="Unisciti a Partita" name="join-game-button" class="secondary-button" />
-            
-            <engine:Label text="" name="status-label" class="status-label" />
+            <engine:Button name="start-matchmaking" text="Start Matchmaking" />
+            <engine:Label text="" name="status-label" />
         </engine:VisualElement>
-        
-        <engine:VisualElement name="game-list-container" class="game-list" />
     </engine:VisualElement>
 </engine:UXML>
