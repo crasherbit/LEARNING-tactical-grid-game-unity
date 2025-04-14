@@ -44,7 +44,6 @@ public class TurnManager : MonoBehaviour
 
     //     private void EndTurn()
     //     {
-    //         Debug.Log("Turno terminato");
     //         isMyTurn = false;
     //         UpdateTurnDisplay();
 

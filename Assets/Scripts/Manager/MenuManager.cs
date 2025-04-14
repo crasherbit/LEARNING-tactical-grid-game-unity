@@ -23,19 +23,17 @@ public class MenuManager : MonoBehaviour
         statusLabel = root.Q<Label>("status-label");
         statusLabel.text = "Clicca per iniziare il matchmaking.";
 
-        Debug.Log("Lobby UI elements initialized." + startMatchmakingButton);
         startMatchmakingButton.clicked += StartMatchmaking;
     }
 
     private void StartMatchmaking()
     {
-        Debug.Log("Richiesta di matchmaking inviata al server.");
         statusLabel.text = "Matchmaking...";
         startMatchmakingButton.SetEnabled(false);
-        webSocketClient.SendMessageAsync("matchmaking_request", null).ConfigureAwait(false);
+        webSocketClient.Send("matchmaking_request", null).ConfigureAwait(false);
     }
 
-    private void HandleMessageReceived(string eventName, WebSocketClient.ResponseData data)
+    private void HandleMessageReceived(string eventName, Dictionary<string, object> data)
     {
         switch (eventName)
         {
@@ -44,11 +42,9 @@ public class MenuManager : MonoBehaviour
                 break;
         }
     }
-    private void OnLobbyReady(WebSocketClient.ResponseData data)
+    private void OnLobbyReady(Dictionary<string, object> data)
     {
-        // Supponiamo che data contenga un oggetto con un campo "lobbyID"
-        string lobbyID = data.lobby_id;
-        Debug.Log($"Lobby trovata con ID: {lobbyID}");
+        string lobbyID = data["lobby_id"] != null ? data["lobby_id"].ToString() : "Unknown";
         statusLabel.text = $"Lobby trovata: {lobbyID}";
         UnityEngine.SceneManagement.SceneManager.LoadScene("GameSceneDemo");
     }
