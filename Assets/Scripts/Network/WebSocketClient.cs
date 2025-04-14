@@ -136,7 +136,6 @@ public class WebSocketClient : MonoBehaviour
         {
             // Assuming JSON format: {"eventName": "event_name", "data": {...}} Dictionary<string, object>
             ResponseJsonMessage jsonMessage = JsonUtility.FromJson<ResponseJsonMessage>(message);
-            Debug.Log($"Processing message: {jsonMessage.eventName} with data: {jsonMessage.data.is_my_turn}");
             UnityMainThreadDispatcher.Instance.Enqueue(() => OnMessageReceived?.Invoke(jsonMessage.eventName, jsonMessage.data));
         }
         catch (Exception e)

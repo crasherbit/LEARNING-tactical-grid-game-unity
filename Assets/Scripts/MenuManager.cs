@@ -42,9 +42,6 @@ public class MenuManager : MonoBehaviour
             case "lobby_ready":
                 OnLobbyReady(data);
                 break;
-            default:
-                Debug.Log($"Evento sconosciuto ricevuto: {eventName} con dati: {data}");
-                break;
         }
     }
     private void OnLobbyReady(WebSocketClient.ResponseData data)
